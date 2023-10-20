@@ -1,0 +1,19 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+    - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
+    - REPO_BASE_NGINX=$(aws ecr describe-repositories --repository-names base-nginx --output text --query "repositories[0].repositoryUri")
+    - REPO_AFT=$(aws ecr describe-repositories --repository-names nginx-images-repo --output text --query "repositories[0].repositoryUri")
+    - IMAGE_BASE=$REPO_BASE:latest
+    - IMAGE_AFT=$REPO_AFT:latest
+  build:
+    commands:
+    - docker build --build-arg BASE_IMAGE=$REPO_BASE_NGINX -t $IMAGE_AFT .
+    - docker push $IMAGE_AFT
+  post_build:
+    commands:
+    - printf '[{"name":"nginx","imageUri":"%s"}]' $IMAGE_AFT > imagedefinitions_NGINX.json
+artifacts:
+  files: imagedefinitions_NGINX.json

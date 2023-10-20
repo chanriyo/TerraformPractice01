@@ -1,0 +1,1 @@
+FROM public.ecr.aws/docker/library/gradle:jdk21-jammy

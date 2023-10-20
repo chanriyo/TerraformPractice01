@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - apt-get update
+      - apt-get install -y unzip
+      - curl -s "https://get.sdkman.io" | bash
+      - source "$HOME/.sdkman/bin/sdkman-init.sh"
+      - sdk install gradle 8.3 # 使用するGradleのバージョンを指定する
+  pre_build:
+    commands:
+    - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
+    # - REPO_BASE_GRADLE=$(aws ecr describe-repositories --repository-names base-gradle --output text --query "repositories[0].repositoryUri")
+    - REPO_BASE_CORRET=$(aws ecr describe-repositories --repository-names base-amazoncorretto --output text --query "repositories[0].repositoryUri")
+    - REPO_AFT=$(aws ecr describe-repositories --repository-names jdk-images-repo --output text --query "repositories[0].repositoryUri")
+    - IMAGE_BASE=$REPO_BASE_CORRET:latest
+    - IMAGE_AFT=$REPO_AFT:latest
+  build:
+    commands:
+    - gradle build
+    - docker build --build-arg BASE_IMAGE=$IMAGE_BASE -t $IMAGE_AFT .
+    - docker push $IMAGE
+  post_build:
+    commands:
+    - printf '[{"name":"openjdk","imageUri":"%s"}]' $IMAGE > imagedefinitions_JDK.json
+artifacts:
+  files: imagedefinitions_JDK.json

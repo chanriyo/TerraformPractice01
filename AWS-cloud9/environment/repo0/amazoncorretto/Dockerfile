@@ -1,0 +1,1 @@
+FROM public.ecr.aws/amazoncorretto/amazoncorretto:21.0.0-al2023-headful
